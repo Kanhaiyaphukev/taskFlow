@@ -19,6 +19,9 @@ TaskFlow is a Flutter project and task management application built for the Flut
 - Profile and organization information
 - Organization-admin authorization checks
 - Loading, empty, validation, and error states
+- Offline state simulation
+- Server error simulation
+- Configurable response delay for loading-state testing
 - Pull-to-refresh for project and task lists
 - Reusable widgets and centralized styling
 - Unit, widget, and integration tests
@@ -126,7 +129,6 @@ taskFlow/
 │   ├── unit/
 │   └── widget/
 ├── ARCHITECTURE.md
-├── PROJECT_STRUCTURE.md
 ├── pubspec.yaml
 └── README.md
 ```
@@ -165,9 +167,89 @@ The mock data contains:
 
 Project and task collections are loaded into memory by `MockDataSource`, allowing create/update/delete operations to affect the running application state.
 
-### Important limitation
+### Simulation and Offline Testing
 
-The current `MockDataSource` does **not** implement an artificial network delay or a configurable offline/error switch. Error paths are represented through validation and missing/invalid entity cases, such as invalid credentials, invalid refresh tokens, missing projects/tasks, and invalid task assignment.
+The `MockDataSource` provides simulation controls for demonstrating loading, error, and offline states without requiring a real backend.
+
+The controls are disabled by default, so normal application behavior is unchanged.
+
+### Simulated server error
+
+Enable the error simulation:
+
+```dart
+final mockDataSource = Get.find<MockDataSource>();
+
+mockDataSource.setSimulation(
+  error: true,
+);
+```
+
+Repository requests will return:
+
+```text
+Simulated server error
+```
+
+This can be used to demonstrate application error handling and error toasts.
+
+### Simulated offline mode
+
+Enable offline mode:
+
+```dart
+final mockDataSource = Get.find<MockDataSource>();
+
+mockDataSource.setSimulation(
+  offline: true,
+);
+```
+
+Previously loaded project and task data remains available from the in-memory cache while offline.
+
+Server-dependent mutations such as create, update, delete, and assignment operations return an offline error.
+
+### Simulated loading delay
+
+Configure an artificial response delay:
+
+```dart
+mockDataSource.setSimulation(
+  delay: const Duration(seconds: 2),
+);
+```
+
+This can be used to demonstrate loading indicators.
+
+### Combine simulations
+
+Multiple simulation options can be enabled together:
+
+```dart
+mockDataSource.setSimulation(
+  error: true,
+  offline: false,
+  delay: const Duration(seconds: 2),
+);
+```
+
+### Reset simulation
+
+Return to normal behavior:
+
+```dart
+mockDataSource.resetSimulation();
+```
+
+The default state is:
+
+```text
+Error: OFF
+Offline: OFF
+Delay: 0
+```
+
+The simulation behavior is covered by unit tests.
 
 ## Authentication and Session Flow
 
@@ -274,6 +356,8 @@ Examples of handled errors include:
 - Unauthorized organization-member actions
 - Invalid task assignment
 - Invalid form input
+- Simulated server errors
+- Simulated offline errors
 
 ## Running the Project
 
@@ -298,7 +382,7 @@ flutter run -d <device-id>
 
 ## Testing
 
-Run all unit and widget tests:
+Run all tests:
 
 ```bash
 flutter test
@@ -323,6 +407,15 @@ flutter test integration_test/app_flow_test.dart -d <device-id>
 ```
 
 The current integration test verifies application startup, splash/session routing, and the login screen.
+
+### Simulation tests
+
+The mock-data simulation behavior is covered by:
+
+```bash
+flutter test test/unit/mock_data_source_test.dart
+flutter test test/unit/mock_data_source_offline_test.dart
+```
 
 ## Static Analysis
 
@@ -355,21 +448,21 @@ build/app/outputs/flutter-apk/release/
 The current project includes:
 
 - Unit tests for validation logic
+- Unit tests for mock error/offline simulation
 - Widget tests for login, dashboard, profile, project, and task views
 - An integration test for the startup/session-to-login flow
 - Static analysis with no analyzer issues
 
-The final automated test suite currently passes with:
+The current automated test suite passes with:
 
 ```text
-+15: All tests passed!
++28: All tests passed!
 ```
 
 ## Known Limitations
 
 - The application currently uses local mock JSON data instead of a real backend.
 - There is no real network/API authentication.
-- The mock data source does not currently provide a configurable artificial delay/offline toggle.
 - In-memory project/task mutations are reset when the application process is restarted.
 - The exact Flutter SDK patch version should be recorded with `flutter --version` when reproducing the assignment environment.
 
@@ -391,6 +484,10 @@ GetX was selected because it provides reactive state, dependency injection, and 
 
 The mock data source provides deterministic assignment data without requiring a backend server. It also allows repository interfaces to remain close to how a production data layer would be structured.
 
+### Simulation controls
+
+Error, offline, and response-delay simulation are implemented inside `MockDataSource` so they can be enabled for testing without adding test-only behavior to the production UI.
+
 ## Submission Checklist
 
 Before submission:
@@ -407,4 +504,5 @@ Also verify:
 - README and architecture documentation are committed
 - Test credentials are documented
 - Release APK builds successfully
+- Unit, widget, and integration tests pass
 - The repository does not contain generated build artifacts or secrets
