@@ -1,0 +1,17 @@
+export 'package:get/get_navigation/src/routes/get_route.dart';
+export 'package:get/get_navigation/src/routes/transitions_type.dart';
+export '../../modules/auth/bindings/auth_binding.dart';
+export '../../modules/auth/views/login_view.dart';
+export '../../modules/app/bindings/app_binding.dart';
+export '../../modules/app/views/splash_view.dart';
+export '../../modules/auth/views/register_view.dart';
+export '../../modules/dashboard/bindings/dashboard_binding.dart';
+export '../../modules/dashboard/views/dashboard_view.dart';
+export '../../modules/profile/bindings/profile_binding.dart';
+export '../../modules/profile/views/profile_view.dart';
+export '../../modules/projects/bindings/project_binding.dart';
+export '../../modules/projects/views/project_details_view.dart';
+export '../../modules/projects/views/project_view.dart';
+export '../../modules/tasks/bindings/task_binding.dart';
+export '../../modules/tasks/views/task_details_view.dart';
+export '../../modules/tasks/views/task_view.dart';
