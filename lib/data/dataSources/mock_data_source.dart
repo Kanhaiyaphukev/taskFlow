@@ -22,6 +22,56 @@ final class MockDataSource {
   List<Map<String, dynamic>>? _projects;
   List<Map<String, dynamic>>? _tasks;
 
+  /// Simulation controls for assignment/demo purposes.
+  bool simulateError = false;
+  bool simulateOffline = false;
+  Duration responseDelay = Duration.zero;
+
+  /// Enable or update mock API simulation.
+  void setSimulation({
+    bool? error,
+    bool? offline,
+    Duration? delay,
+  }) {
+    if (error != null) {
+      simulateError = error;
+    }
+
+    if (offline != null) {
+      simulateOffline = offline;
+    }
+
+    if (delay != null) {
+      responseDelay = delay;
+    }
+  }
+
+  /// Reset all simulation states.
+  void resetSimulation() {
+    simulateError = false;
+    simulateOffline = false;
+    responseDelay = Duration.zero;
+  }
+
+  /// Simulate a request.When [allowCachedData] is true, previously loaded cached data, remains available while offline.
+  Future<void> _simulateRequest({
+    bool allowCachedData = false,
+  }) async {
+    if (responseDelay > Duration.zero) {
+      await Future.delayed(responseDelay);
+    }
+
+    if (simulateError) {
+      throw Exception('Simulated server error');
+    }
+
+    if (simulateOffline && !allowCachedData) {
+      throw Exception(
+        'You are offline. Please retry when connection is restored.',
+      );
+    }
+  }
+
   /// Load mock JSON data from assets.
   Future<Map<String, dynamic>> _loadData() async {
     final jsonString = await rootBundle.loadString(
@@ -33,41 +83,54 @@ final class MockDataSource {
 
   /// Login using mock credentials.
   Future<ResLogin> login(ReqLogin request) async {
+    await _simulateRequest();
+
     final data = await _loadData();
+
     final authMock = data['auth_mock'] as Map<String, dynamic>;
+
     final credentials = List<Map<String, dynamic>>.from(
       authMock['test_credentials'],
     );
 
     final credential = credentials.firstWhere(
-      (item) =>
-          item['email'] == request.email.trim() &&
+          (item) =>
+      item['email'] == request.email.trim() &&
           item['password'] == request.password,
       orElse: () => throw Exception('Invalid email or password'),
     );
 
     final orgId = credential['org_id'] as String;
 
-    final userJson = List<Map<String, dynamic>>.from(data['users']).firstWhere(
-      (item) => item['email'] == request.email.trim(),
+    final userJson = List<Map<String, dynamic>>.from(
+      data['users'],
+    ).firstWhere(
+          (item) => item['email'] == request.email.trim(),
       orElse: () => throw Exception('User not found'),
     );
 
     final userId = userJson['id'] as String;
 
-    final orgJson = List<Map<String, dynamic>>.from(data['organizations'])
-        .firstWhere(
+    final orgJson = List<Map<String, dynamic>>.from(
+      data['organizations'],
+    ).firstWhere(
           (item) => item['id'] == orgId,
-          orElse: () => throw Exception('Organization not found'),
-        );
+      orElse: () => throw Exception('Organization not found'),
+    );
 
-    final memberJson = List<Map<String, dynamic>>.from(data['org_members'])
-        .firstWhere(
-          (item) => item['user_id'] == userId && item['org_id'] == orgId,
-          orElse: () => throw Exception('Organization membership not found'),
-        );
+    final memberJson = List<Map<String, dynamic>>.from(
+      data['org_members'],
+    ).firstWhere(
+          (item) =>
+      item['user_id'] == userId &&
+          item['org_id'] == orgId,
+      orElse: () => throw Exception(
+        'Organization membership not found',
+      ),
+    );
+
     final tokenResponse =
-        authMock['mock_login_response'] as Map<String, dynamic>;
+    authMock['mock_login_response'] as Map<String, dynamic>;
 
     return ResLogin(
       user: UserModel.fromJson(userJson),
@@ -80,14 +143,17 @@ final class MockDataSource {
 
   /// Refresh the mock access token.
   Future<String> refreshToken(String refreshToken) async {
+    await _simulateRequest();
+
     final data = await _loadData();
 
     final authMock = data['auth_mock'] as Map<String, dynamic>;
 
     final tokenResponse =
-        authMock['mock_login_response'] as Map<String, dynamic>;
+    authMock['mock_login_response'] as Map<String, dynamic>;
 
-    final storedRefreshToken = tokenResponse['refresh_token'] as String;
+    final storedRefreshToken =
+    tokenResponse['refresh_token'] as String;
 
     if (refreshToken != storedRefreshToken) {
       throw Exception('Invalid refresh token');
@@ -98,17 +164,30 @@ final class MockDataSource {
 
   /// Get dashboard data.
   Future<ResDashboard> getDashboard() async {
+    await _simulateRequest();
+
     final data = await _loadData();
 
     final projects = (data['projects'] as List)
-        .map((item) => ProjectModel.fromJson(item as Map<String, dynamic>))
+        .map(
+          (item) => ProjectModel.fromJson(
+        item as Map<String, dynamic>,
+      ),
+    )
         .toList();
 
     final tasks = (data['tasks'] as List)
-        .map((item) => TaskModel.fromJson(item as Map<String, dynamic>))
+        .map(
+          (item) => TaskModel.fromJson(
+        item as Map<String, dynamic>,
+      ),
+    )
         .toList();
 
-    return ResDashboard(projects: projects, tasks: tasks);
+    return ResDashboard(
+      projects: projects,
+      tasks: tasks,
+    );
   }
 
   /// Get user profile.
@@ -116,25 +195,38 @@ final class MockDataSource {
     required String userId,
     required String organizationId,
   }) async {
+    await _simulateRequest();
+
     final data = await _loadData();
 
-    final userJson = List<Map<String, dynamic>>.from(data['users']).firstWhere(
-      (item) => item['id'] == userId,
+    final userJson = List<Map<String, dynamic>>.from(
+      data['users'],
+    ).firstWhere(
+          (item) => item['id'] == userId,
       orElse: () => throw Exception('User not found'),
     );
 
     final organizationJson =
-        List<Map<String, dynamic>>.from(data['organizations']).firstWhere(
+    List<Map<String, dynamic>>.from(
+      data['organizations'],
+    ).firstWhere(
           (item) => item['id'] == organizationId,
-          orElse: () => throw Exception('Organization not found'),
-        );
+      orElse: () => throw Exception(
+        'Organization not found',
+      ),
+    );
 
-    final membershipJson = List<Map<String, dynamic>>.from(data['org_members'])
-        .firstWhere(
+    final membershipJson =
+    List<Map<String, dynamic>>.from(
+      data['org_members'],
+    ).firstWhere(
           (item) =>
-              item['user_id'] == userId && item['org_id'] == organizationId,
-          orElse: () => throw Exception('Organization membership not found'),
-        );
+      item['user_id'] == userId &&
+          item['org_id'] == organizationId,
+      orElse: () => throw Exception(
+        'Organization membership not found',
+      ),
+    );
 
     return ResProfile(
       user: UserModel.fromJson(userJson),
@@ -143,19 +235,29 @@ final class MockDataSource {
     );
   }
 
-  /// Get all projects.
+  /// Get all projects. Previously loaded projects remain available while offline.
   Future<List<ResProject>> getProjects() async {
+    await _simulateRequest(
+      allowCachedData: _projects != null,
+    );
+
     final projects = await _getProjectsData();
 
-    return projects.map((json) => ResProject.fromJson(json)).toList();
+    return projects
+        .map((json) => ResProject.fromJson(json))
+        .toList();
   }
 
-  /// Get project by ID.
+  /// Get project by ID. Previously loaded projects remain available while offline.
   Future<ResProject> getProjectById(String projectId) async {
+    await _simulateRequest(
+      allowCachedData: _projects != null,
+    );
+
     final projects = await _getProjectsData();
 
     final project = projects.firstWhere(
-      (item) => item['id'] == projectId,
+          (item) => item['id'] == projectId,
       orElse: () => throw Exception('Project not found'),
     );
 
@@ -167,6 +269,8 @@ final class MockDataSource {
     required String organizationId,
     required ReqCreateProject request,
   }) async {
+    await _simulateRequest();
+
     final projects = await _getProjectsData();
 
     final project = <String, dynamic>{
@@ -189,9 +293,13 @@ final class MockDataSource {
     required String projectId,
     required ReqUpdateProject request,
   }) async {
+    await _simulateRequest();
+
     final projects = await _getProjectsData();
 
-    final index = projects.indexWhere((item) => item['id'] == projectId);
+    final index = projects.indexWhere(
+          (item) => item['id'] == projectId,
+    );
 
     if (index == -1) {
       throw Exception('Project not found');
@@ -207,10 +315,16 @@ final class MockDataSource {
   }
 
   /// Delete an existing project.
-  Future<void> deleteProject({required String projectId}) async {
+  Future<void> deleteProject({
+    required String projectId,
+  }) async {
+    await _simulateRequest();
+
     final projects = await _getProjectsData();
 
-    final index = projects.indexWhere((item) => item['id'] == projectId);
+    final index = projects.indexWhere(
+          (item) => item['id'] == projectId,
+    );
 
     if (index == -1) {
       throw Exception('Project not found');
@@ -227,28 +341,47 @@ final class MockDataSource {
 
     final data = await _loadData();
 
-    _projects = List<Map<String, dynamic>>.from(data['projects']);
+    _projects = List<Map<String, dynamic>>.from(
+      data['projects'],
+    );
 
     return _projects!;
   }
 
-  /// Get tasks optionally filtered by project.
-  Future<List<ResTask>> getTasks({String? projectId}) async {
+  /// Get tasks optionally filtered by project. Previously loaded tasks remain available while offline.
+  Future<List<ResTask>> getTasks({
+    String? projectId,
+  }) async {
+    await _simulateRequest(
+      allowCachedData: _tasks != null,
+    );
+
     final tasks = await _getTasksData();
 
-    final filteredTasks = projectId == null || projectId.isEmpty
+    final filteredTasks =
+    projectId == null || projectId.isEmpty
         ? tasks
-        : tasks.where((task) => task['project_id'] == projectId).toList();
+        : tasks
+        .where(
+          (task) => task['project_id'] == projectId,
+    )
+        .toList();
 
-    return filteredTasks.map((json) => ResTask.fromJson(json)).toList();
+    return filteredTasks
+        .map((json) => ResTask.fromJson(json))
+        .toList();
   }
 
-  /// Get task by ID.
+  /// Get task by ID. Previously loaded tasks remain available while offline.
   Future<ResTask> getTaskById(String taskId) async {
+    await _simulateRequest(
+      allowCachedData: _tasks != null,
+    );
+
     final tasks = await _getTasksData();
 
     final task = tasks.firstWhere(
-      (item) => item['id'] == taskId,
+          (item) => item['id'] == taskId,
       orElse: () => throw Exception('Task not found'),
     );
 
@@ -256,16 +389,22 @@ final class MockDataSource {
   }
 
   /// Create a new task.
-  Future<ResTask> createTask({required ReqCreateTask request}) async {
+  Future<ResTask> createTask({
+    required ReqCreateTask request,
+  }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
     final projects = await _getProjectsData();
 
     if (request.assigneeId != null) {
-      await _validateOrganizationUser(request.assigneeId!);
+      await _validateOrganizationUser(
+        request.assigneeId!,
+      );
     }
 
     final projectIndex = projects.indexWhere(
-      (project) => project['id'] == request.projectId,
+          (project) => project['id'] == request.projectId,
     );
 
     if (projectIndex == -1) {
@@ -296,16 +435,22 @@ final class MockDataSource {
     required String taskId,
     required ReqUpdateTask request,
   }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
 
-    final index = tasks.indexWhere((item) => item['id'] == taskId);
+    final index = tasks.indexWhere(
+          (item) => item['id'] == taskId,
+    );
 
     if (index == -1) {
       throw Exception('Task not found');
     }
 
     if (request.assigneeId != null) {
-      await _validateOrganizationUser(request.assigneeId!);
+      await _validateOrganizationUser(
+        request.assigneeId!,
+      );
     }
 
     tasks[index] = {
@@ -322,11 +467,17 @@ final class MockDataSource {
   }
 
   /// Delete an existing task.
-  Future<void> deleteTask({required String taskId}) async {
+  Future<void> deleteTask({
+    required String taskId,
+  }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
     final projects = await _getProjectsData();
 
-    final index = tasks.indexWhere((item) => item['id'] == taskId);
+    final index = tasks.indexWhere(
+          (item) => item['id'] == taskId,
+    );
 
     if (index == -1) {
       throw Exception('Task not found');
@@ -337,15 +488,15 @@ final class MockDataSource {
     tasks.removeAt(index);
 
     final projectIndex = projects.indexWhere(
-      (project) => project['id'] == projectId,
+          (project) => project['id'] == projectId,
     );
 
     if (projectIndex != -1) {
-      final currentCount = (projects[projectIndex]['task_count'] ?? 0) as int;
+      final currentCount =
+      (projects[projectIndex]['task_count'] ?? 0) as int;
 
-      projects[projectIndex]['task_count'] = currentCount > 0
-          ? currentCount - 1
-          : 0;
+      projects[projectIndex]['task_count'] =
+      currentCount > 0 ? currentCount - 1 : 0;
     }
   }
 
@@ -354,15 +505,22 @@ final class MockDataSource {
     required String taskId,
     required String status,
   }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
 
-    final index = tasks.indexWhere((item) => item['id'] == taskId);
+    final index = tasks.indexWhere(
+          (item) => item['id'] == taskId,
+    );
 
     if (index == -1) {
       throw Exception('Task not found');
     }
 
-    tasks[index] = {...tasks[index], 'status': status};
+    tasks[index] = {
+      ...tasks[index],
+      'status': status,
+    };
 
     return ResTask.fromJson(tasks[index]);
   }
@@ -372,15 +530,22 @@ final class MockDataSource {
     required String taskId,
     required String priority,
   }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
 
-    final index = tasks.indexWhere((item) => item['id'] == taskId);
+    final index = tasks.indexWhere(
+          (item) => item['id'] == taskId,
+    );
 
     if (index == -1) {
       throw Exception('Task not found');
     }
 
-    tasks[index] = {...tasks[index], 'priority': priority};
+    tasks[index] = {
+      ...tasks[index],
+      'priority': priority,
+    };
 
     return ResTask.fromJson(tasks[index]);
   }
@@ -390,42 +555,67 @@ final class MockDataSource {
     required String taskId,
     required ReqAssignTask request,
   }) async {
+    await _simulateRequest();
+
     final tasks = await _getTasksData();
 
-    final index = tasks.indexWhere((item) => item['id'] == taskId);
+    final index = tasks.indexWhere(
+          (item) => item['id'] == taskId,
+    );
 
     if (index == -1) {
       throw Exception('Task not found');
     }
 
     if (request.assigneeId != null) {
-      await _validateOrganizationUser(request.assigneeId!);
+      await _validateOrganizationUser(
+        request.assigneeId!,
+      );
     }
 
-    tasks[index] = {...tasks[index], 'assignee_id': request.assigneeId};
+    tasks[index] = {
+      ...tasks[index],
+      'assignee_id': request.assigneeId,
+    };
 
     return ResTask.fromJson(tasks[index]);
   }
 
   /// Get users for task assignment.
   Future<List<ResTaskUser>> getUsers() async {
+    await _simulateRequest();
+
     final data = await _loadData();
 
-    final users = List<Map<String, dynamic>>.from(data['users']);
+    final users = List<Map<String, dynamic>>.from(
+      data['users'],
+    );
 
-    return users.map((json) => ResTaskUser.fromJson(json)).toList();
+    return users
+        .map((json) => ResTaskUser.fromJson(json))
+        .toList();
   }
 
   /// Validate that the assigned user exists.
-  Future<void> _validateOrganizationUser(String userId) async {
+  Future<void> _validateOrganizationUser(
+      String userId,
+      ) async {
+    await _simulateRequest();
+
     final data = await _loadData();
 
-    final users = List<Map<String, dynamic>>.from(data['users']);
+    final users = List<Map<String, dynamic>>.from(
+      data['users'],
+    );
 
-    final exists = users.any((user) => user['id'] == userId);
+    final exists = users.any(
+          (user) => user['id'] == userId,
+    );
 
     if (!exists) {
-      throw Exception('User does not belong to the organization');
+      throw Exception(
+        'User does not belong to the organization',
+      );
     }
   }
 
@@ -437,7 +627,9 @@ final class MockDataSource {
 
     final data = await _loadData();
 
-    _tasks = List<Map<String, dynamic>>.from(data['tasks']);
+    _tasks = List<Map<String, dynamic>>.from(
+      data['tasks'],
+    );
 
     return _tasks!;
   }
