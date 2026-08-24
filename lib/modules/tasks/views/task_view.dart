@@ -19,7 +19,7 @@ class TaskView extends GetView<TaskController> {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => Scaffold(
+          () => Scaffold(
         appBar: CustomAppBar(
           title: 'Tasks',
           actions: [
@@ -76,6 +76,7 @@ class TaskView extends GetView<TaskController> {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
+        controller.loadTaskDetails(task.id);
         Get.toNamed(AppRoutes().taskDetailsView, arguments: task.id);
       },
       child: Container(
@@ -196,94 +197,94 @@ class TaskView extends GetView<TaskController> {
           bottom: MediaQuery.of(Get.context!).viewInsets.bottom + 20,
         ),
         child: Obx(
-          () => controller.isFormLoading.value
+              () => controller.isFormLoading.value
               ? SizedBox(height: 350, child: AppLoader.onScreenLoader())
               : SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Create Task',
-                              style: AppTextStyle.titleBold(
-                                fontSize: 18,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: Get.back,
-                            icon: Icon(Icons.close, color: AppColors.textColor),
-                          ),
-                        ],
-                      ),
-                      gapH20,
-                      formLabel('Project'),
-                      gapH8,
-                      _projectDropdown(),
-                      gapH20,
-                      formLabel('Task Title'),
-                      gapH8,
-                      CustomTextField(
-                        controller: controller.titleController,
-                        hintText: 'Enter task title',
-                        textInputAction: TextInputAction.next,
-                        isMandatory: true,
-                      ),
-                      gapH20,
-                      formLabel('Description'),
-                      gapH8,
-                      CustomTextField(
-                        controller: controller.descriptionController,
-                        hintText: 'Enter task description',
-                        textInputAction: TextInputAction.done,
-                        isMultiline: true,
-                        isMandatory: true,
-                      ),
-                      gapH20,
-                      formLabel('Due Date'),
-                      gapH8,
-                      CustomTextField(
-                        controller: controller.dueDateController,
-                        hintText: 'Select due date',
-                        isDateField: true,
-                        suffixIcon: Icon(
-                          Icons.calendar_month,
-                          color: AppColors.secondary,
-                          size: 22,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Create Task',
+                        style: AppTextStyle.titleBold(
+                          fontSize: 18,
+                          color: AppColors.textColor,
                         ),
-                        textInputAction: TextInputAction.done,
-                        isMandatory: true,
                       ),
-                      gapH20,
-                      formLabel('Status'),
-                      gapH8,
-                      _statusDropdown(),
-                      gapH20,
-                      formLabel('Priority'),
-                      gapH8,
-                      _priorityDropdown(),
-                      gapH20,
-                      formLabel('Assignee'),
-                      gapH8,
-                      _assigneeDropdown(),
-                      gapH28,
-                      CustomElevatedButton(
-                        text: 'Create Task',
-                        onPressed: () {
-                          controller.createTask();
-                        },
-                        borderRadius: 16,
-                        backgroundColor: AppColors.primary,
-                        textColor: AppColors.bgColor,
-                      ),
-                      gapH8,
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      onPressed: Get.back,
+                      icon: Icon(Icons.close, color: AppColors.textColor),
+                    ),
+                  ],
                 ),
+                gapH20,
+                formLabel('Project'),
+                gapH8,
+                _projectDropdown(),
+                gapH20,
+                formLabel('Task Title'),
+                gapH8,
+                CustomTextField(
+                  controller: controller.titleController,
+                  hintText: 'Enter task title',
+                  textInputAction: TextInputAction.next,
+                  isMandatory: true,
+                ),
+                gapH20,
+                formLabel('Description'),
+                gapH8,
+                CustomTextField(
+                  controller: controller.descriptionController,
+                  hintText: 'Enter task description',
+                  textInputAction: TextInputAction.done,
+                  isMultiline: true,
+                  isMandatory: true,
+                ),
+                gapH20,
+                formLabel('Due Date'),
+                gapH8,
+                CustomTextField(
+                  controller: controller.dueDateController,
+                  hintText: 'Select due date',
+                  isDateField: true,
+                  suffixIcon: Icon(
+                    Icons.calendar_month,
+                    color: AppColors.secondary,
+                    size: 22,
+                  ),
+                  textInputAction: TextInputAction.done,
+                  isMandatory: true,
+                ),
+                gapH20,
+                formLabel('Status'),
+                gapH8,
+                _statusDropdown(),
+                gapH20,
+                formLabel('Priority'),
+                gapH8,
+                _priorityDropdown(),
+                gapH20,
+                formLabel('Assignee'),
+                gapH8,
+                _assigneeDropdown(),
+                gapH28,
+                CustomElevatedButton(
+                  text: 'Create Task',
+                  onPressed: () {
+                    controller.createTask();
+                  },
+                  borderRadius: 16,
+                  backgroundColor: AppColors.primary,
+                  textColor: AppColors.bgColor,
+                ),
+                gapH8,
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -296,7 +297,7 @@ class TaskView extends GetView<TaskController> {
       selectedValue: controller.selectedProjectName,
       onChanged: (value) {
         final project = controller.projects.firstWhere(
-          (project) => project.name == value,
+              (project) => project.name == value,
         );
 
         controller.selectedProjectName.value = value;

@@ -3,11 +3,9 @@ import 'package:get/get.dart';
 import '../../../shared/resources/styles/app_colors.dart';
 import '../../../shared/resources/styles/app_space_between.dart';
 import '../../../shared/resources/styles/app_text_style.dart';
-import '../../../shared/routes/app_pages.dart';
 import '../../../shared/widgets/app_loader.dart';
 import '../../../shared/widgets/custom_appbar.dart';
 import '../../../shared/widgets/custom_elevated_button.dart';
-import '../../../shared/widgets/custom_text_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 import '../controllers/project_controller.dart';
 import '../models/response/res_project.dart';
@@ -130,30 +128,15 @@ class ProjectDetailsView extends GetView<ProjectController> {
           color: AppColors.withOpacity(AppColors.primary, 0.15),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              summaryItem('Tasks', project.taskCount, fontSize: 15),
-              summaryItem(
-                'Status',
-                project.status.toUpperCase(),
-                color: AppColors.green,
-                fontSize: 14,
-              ),
-            ],
-          ),
-          gapH14,
-          Center(
-            child: CustomTextButton(
-              text: 'View Tasks',
-              onPressed: () {
-                Get.toNamed(AppRoutes().taskView, arguments: project.id);
-              },
-              textColor: AppColors.primary,
-            ),
+          summaryItem('Tasks', project.taskCount, fontSize: 15),
+          summaryItem(
+            'Status',
+            project.status.toUpperCase(),
+            color: AppColors.green,
+            fontSize: 14,
           ),
         ],
       ),

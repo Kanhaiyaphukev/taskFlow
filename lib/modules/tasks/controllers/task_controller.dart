@@ -46,6 +46,11 @@ class TaskController extends GetxController {
     loadProjects();
     loadUsers();
     getTasks();
+
+    final taskId = Get.arguments;
+    if (taskId is String) {
+      loadTaskDetails(taskId);
+    }
   }
 
   /// Check whether current user is organization admin.
@@ -432,7 +437,7 @@ class TaskController extends GetxController {
     selectedProjectId.value = task.projectId;
 
     final project = projects.firstWhereOrNull(
-      (project) => project.id == task.projectId,
+          (project) => project.id == task.projectId,
     );
 
     selectedProjectName.value = project?.name ?? '';
