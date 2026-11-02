@@ -1,8 +1,7 @@
 class FlutterStorageKeys {
   FlutterStorageKeys._internal();
 
-  static final FlutterStorageKeys _instance =
-  FlutterStorageKeys._internal();
+  static final FlutterStorageKeys _instance = FlutterStorageKeys._internal();
 
   factory FlutterStorageKeys() {
     return _instance;
@@ -17,4 +16,5 @@ class FlutterStorageKeys {
   final String userAvatarUrl = 'userAvatarUrl';
   final String organizationId = 'organizationId';
   final String organizationName = 'organizationName';
+  final String createTask = '';
 }
